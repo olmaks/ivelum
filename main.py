@@ -17,4 +17,7 @@ if __name__ == '__main__':
     validated_port = perform_port_validation(port)
     with ThreadedHTTPServer(("", validated_port), WebHandler) as httpd:
         print('Serving at port:', port, 'Use <Ctrl-C> to stop')
-        httpd.serve_forever()
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print('Thanks for using!')
