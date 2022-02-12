@@ -7,15 +7,14 @@ from lxml.html import fromstring, tostring
 
 
 class WebHandler(SimpleHTTPRequestHandler):
-    API_URL = 'https://news.ycombinator.com/'
+    API_URL = 'news.ycombinator.com'
+    API_URL_WITH_ENCRYPTION = 'https://{}/'.format(API_URL)
     DEFAULT_ENCODING = 'utf-8'
     REQUIRED_LENGTH = 6
 
     def do_GET(self):
         """Serve a GET request."""
-        url = self.API_URL + self.path[1:]
-        self.send_response(200)
-        self.end_headers()
+        url = self.API_URL_WITH_ENCRYPTION + self.path[1:]
         try:
             with urlopen(url) as response:
                 content_header = response.getheader('Content-Type')
@@ -37,6 +36,7 @@ class WebHandler(SimpleHTTPRequestHandler):
     def add_tm(self, page):
         """Parse html page and add required sign"""
         root = fromstring(page)
+        self.link_parser(root)
         root_elements = [el for el in root.getiterator() if el.text]
         elements = [el for el in root_elements if el.text.strip()]
         for el in elements:
@@ -54,6 +54,25 @@ class WebHandler(SimpleHTTPRequestHandler):
                 new_el.attrib[k] = v
             parent.replace(el, new_el)
         return tostring(root)
+
+    def link_parser(self, root):
+        """ Replace API url into local. Modification from lxml rewrite_links"""
+        for el, attrib, link, pos in root.iterlinks():
+            if el.tag == 'a' and self.API_URL in link:
+                new_link = self.replace_url(link)
+                if new_link == link:
+                    continue
+                cur = el.get(attrib)
+                if not pos and len(cur) == len(link):
+                    new = new_link
+                else:
+                    new = cur[:pos] + new_link + cur[pos + len(link):]
+                el.set(attrib, new)
+
+    def replace_url(self, url):
+        if self.API_URL in url:
+            pattern = '^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/\n]+)?([\/]+)?'
+            return re.sub(pattern, '/', url)
 
     @staticmethod
     def prepare_html_response(title, body):
