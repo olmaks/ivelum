@@ -1,9 +1,12 @@
+import re
 from socketserver import ThreadingMixIn
 from urllib.error import HTTPError
 from urllib.request import urlopen
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 from lxml.html import fromstring, tostring
+
+from regex_patterns import REGEXP_PATTERNS
 
 
 class WebHandler(SimpleHTTPRequestHandler):
@@ -40,11 +43,11 @@ class WebHandler(SimpleHTTPRequestHandler):
         root_elements = [el for el in root.getiterator() if el.text]
         elements = [el for el in root_elements if el.text.strip()]
         for el in elements:
-            # el.text doesn't return full html tag, use el.text_content() instead
+            if el.tag == 'a':
+                if re.match(REGEXP_PATTERNS['is_url'], el.text_content()):
+                    continue
             text_content = el.text_content()
-            text = [t if len(t) != self.REQUIRED_LENGTH else t + '™'
-                    for t in text_content.split(' ')]
-            text = ' '.join(text)
+            text = ' '.join(self.replace_content(text_content))
             if text == text_content:
                 continue
             parent = el.getparent()
@@ -71,8 +74,17 @@ class WebHandler(SimpleHTTPRequestHandler):
 
     def replace_url(self, url):
         if self.API_URL in url:
-            pattern = '^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/\n]+)?([\/]+)?'
+            pattern = REGEXP_PATTERNS['url_replace']
             return re.sub(pattern, '/', url)
+
+    @staticmethod
+    def replace_content(text_content):
+        """ Custom generator for generating formatted text """
+        for text in text_content.split(' '):
+            if not re.match(REGEXP_PATTERNS['is_url'], text):
+                yield re.sub(REGEXP_PATTERNS['search_pattern'], text + '™', text)
+            else:
+                yield text
 
     @staticmethod
     def prepare_html_response(title, body):
