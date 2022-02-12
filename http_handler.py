@@ -22,16 +22,17 @@ class WebHandler(SimpleHTTPRequestHandler):
                 content, *charset = content_header.split('; charset=')
                 charset = charset[0] if charset else self.DEFAULT_ENCODING
                 # Skip not html files (image/gif, application/javascript etc.)
+                self.send_response(200)
+                self.end_headers()
                 if content == 'text/html':
                     page = response.read().decode(charset)
                     self.wfile.write(self.add_tm(page))
                 else:
                     self.copyfile(urlopen(url), self.wfile)
         except HTTPError as http_error:
-            title = 'Ooops'
-            body = '<div>{}</div>'.format(http_error)
-            html_response = self.prepare_html_response(title, body)
-            self.wfile.write(bytes(html_response, self.DEFAULT_ENCODING))
+            self.send_response(http_error.status)
+            self.end_headers()
+            self.wfile.write(http_error.read())
 
     def add_tm(self, page):
         """Parse html page and add required sign"""
