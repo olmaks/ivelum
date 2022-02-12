@@ -1,4 +1,3 @@
-import re
 from socketserver import ThreadingMixIn
 from urllib.error import HTTPError
 from urllib.request import urlopen
@@ -6,7 +5,7 @@ from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 from lxml.html import fromstring, tostring
 
-from regex_patterns import REGEXP_PATTERNS
+from utils import replace_url, is_url, replace_content
 
 
 class WebHandler(SimpleHTTPRequestHandler):
@@ -43,11 +42,10 @@ class WebHandler(SimpleHTTPRequestHandler):
         root_elements = [el for el in root.getiterator() if el.text]
         elements = [el for el in root_elements if el.text.strip()]
         for el in elements:
-            if el.tag == 'a':
-                if re.match(REGEXP_PATTERNS['is_url'], el.text_content()):
-                    continue
+            if el.tag == 'a' and is_url(el.text_content()):
+                continue
             text_content = el.text_content()
-            text = ' '.join(self.replace_content(text_content))
+            text = ' '.join(replace_content(text_content))
             if text == text_content:
                 continue
             parent = el.getparent()
@@ -62,7 +60,7 @@ class WebHandler(SimpleHTTPRequestHandler):
         """ Replace API url into local. Modification from lxml rewrite_links"""
         for el, attrib, link, pos in root.iterlinks():
             if el.tag == 'a' and self.API_URL in link:
-                new_link = self.replace_url(link)
+                new_link = replace_url(self.API_URL, link)
                 if new_link == link:
                     continue
                 cur = el.get(attrib)
@@ -71,28 +69,6 @@ class WebHandler(SimpleHTTPRequestHandler):
                 else:
                     new = cur[:pos] + new_link + cur[pos + len(link):]
                 el.set(attrib, new)
-
-    def replace_url(self, url):
-        if self.API_URL in url:
-            pattern = REGEXP_PATTERNS['url_replace']
-            return re.sub(pattern, '/', url)
-
-    @staticmethod
-    def replace_content(text_content):
-        """ Custom generator for generating formatted text """
-        for text in text_content.split(' '):
-            if not re.match(REGEXP_PATTERNS['is_url'], text):
-                yield re.sub(REGEXP_PATTERNS['search_pattern'], text + '™', text)
-            else:
-                yield text
-
-    @staticmethod
-    def prepare_html_response(title, body):
-        """Return base page structure"""
-        return '<html><head>' \
-               '<title>{}</title>' \
-               '<body>{}</body>' \
-               '</head></html>'.format(title, body)
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
