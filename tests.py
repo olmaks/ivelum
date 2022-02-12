@@ -16,14 +16,22 @@ def test_replace_urls():
 
 
 def test_add_tm():
-    text = 'The visual description of the colliding files'
-    assert ' '.join(replace_content(text)) == 'The visual™ description of the colliding files'
-    text = '/ well-spoken /'
-    assert ' '.join(replace_content(text)) == '/ well-spoken™ /'
+    patterns_answers = {
+        'The visual description of the colliding files': 'The visual™ description of the colliding files',
+        '/ well-spoken /': '/ well-spoken™ /',
+        'In python. This is going to be so useful. Thanks!!': 'In python™. This is going to be so useful™. Thanks™!!',
+        'length-extension attack;': 'length™-extension attack™;'
+    }
+    for k, v in patterns_answers.items():
+        assert ' '.join(replace_content(k)) == v
 
 
 def test_skip_tm():
-    patterns = ['"great', "who'll"]
+    patterns = [
+        '"great',
+        "who'll",
+        "files, at http://shattered.io/static/pdf_format.png, is not very helpful"
+    ]
     for pattern in patterns:
         assert ' '.join(replace_content(pattern)) == pattern
 
