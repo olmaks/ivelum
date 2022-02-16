@@ -20,7 +20,11 @@ def test_add_tm():
         'The visual description of the colliding files': 'The visual™ description of the colliding files',
         '/ well-spoken /': '/ well-spoken™ /',
         'In python. This is going to be so useful. Thanks!!': 'In python™. This is going to be so useful™. Thanks™!!',
-        'length-extension attack;': 'length™-extension attack™;'
+        'length-extension attack;': 'length™-extension attack™;',
+        'Did they really trademark Sprite™?': "Did they really™ trademark Sprite™?",
+        'I assume/hope the Spirte™ team have budgeted': 'I assume™/hope the Spirte™ team have budgeted',
+        '2-liter [Sprite] bottle though :)': '2-liter [Sprite™] bottle™ though™ :)',
+        '(Who came?) Я пришёл. (I came)': '(Who came?) Я пришёл™. (I came)',
     }
     for k, v in patterns_answers.items():
         assert ' '.join(replace_content(k)) == v

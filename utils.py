@@ -7,7 +7,13 @@ def replace_content(text_content):
     """ Custom generator for generating formatted text """
     for text in text_content.split(' '):
         if not re.match(REGEXP_PATTERNS['is_url'], text):
-            yield re.sub(REGEXP_PATTERNS['search_pattern'], '\\1™', text)
+            match = re.search(REGEXP_PATTERNS['search_pattern'], text)
+            if not match:
+                yield text
+            elif match and match.group(0) + '™' in text:
+                yield text
+            else:
+                yield re.sub(REGEXP_PATTERNS['search_pattern'], '\\1™', text)
         else:
             yield text
 
