@@ -44,11 +44,10 @@ class WebHandler(SimpleHTTPRequestHandler):
         for el in elements:
             if el.tag == 'a' and is_url(el.text_content()):
                 continue
-            text_content = el.text
-            text = ' '.join(replace_content(text_content))
-            if text == text_content:
-                continue
-            el.text = text
+            if el.text:
+                el.text = ' '.join(replace_content(el.text))
+            if el.tail:
+                el.tail = ' '.join(replace_content(el.tail))
         return tostring(root)
 
     def link_parser(self, root):
